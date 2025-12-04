@@ -1,0 +1,83 @@
+version: '3.8'
+
+services:
+  api:
+    container_name: go-api
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: go-api:latest
+    ports:
+      - 8000:8000
+    networks:
+      - go-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    develop: # This is the develop section
+      watch:
+        - path: .
+          action: rebuild
+    depends_on:
+      - prometheus
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:v2.55.0
+    volumes:
+      - ./Docker/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - 9090:9090
+    networks:
+      - go-network
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: grafana-postgres
+    environment:
+      POSTGRES_USER: grafana
+      POSTGRES_PASSWORD: grafana
+      POSTGRES_DB: grafana
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - go-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grafana -d grafana"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    volumes:
+      - ./Docker/grafana.yml:/etc/grafana/provisioning/datasources/datasource.yaml
+    ports:
+      - 3000:3000
+    networks:
+      - go-network
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=password
+      - GF_DATABASE_TYPE=postgres
+      - GF_DATABASE_HOST=postgres
+      - GF_DATABASE_NAME=grafana
+      - GF_DATABASE_USER=grafana
+      - GF_DATABASE_PASSWORD=grafana
+      - GF_DATABASE_SSL_MODE=disable
+    depends_on:
+      - prometheus
+      - postgres
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  go-network:
+    driver: bridge

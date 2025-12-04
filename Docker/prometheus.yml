@@ -1,0 +1,15 @@
+# Global configuration for Prometheus
+global:
+  # How frequently to scrape targets by default
+  scrape_interval: 15s
+  # How frequently to evaluate alerting rules
+  evaluation_interval: 15s
+
+# Scrape configurations for different monitoring targets
+scrape_configs:
+  # Configuration for scraping metrics from the Go API service
+  - job_name: 'go-api'
+    static_configs:
+      # Target endpoint for the Go API service
+      # 'api' resolves to the service name in Docker network
+      - targets: ['api:8000']

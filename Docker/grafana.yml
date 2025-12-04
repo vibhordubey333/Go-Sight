@@ -1,0 +1,11 @@
+# Grafana configuration for Prometheus data source
+# This file configures Grafana to connect to a Prometheus server
+# The 'prometheus' hostname resolves within the Docker network
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy  # Routes requests through Grafana's backend
+    url: http://prometheus:9090  # Prometheus server URL
+    isDefault: true  # Set as default data source
+    editable: true  # Allow editing in Grafana UI
