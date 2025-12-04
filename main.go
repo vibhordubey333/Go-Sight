@@ -46,7 +46,7 @@ func main() {
 	router.GET("/v1/users", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "Hello World"})
 	})
-	router.Run(":8080")
+	router.Run(":8000")
 }
 
 // Custom metrics with custom regsitry
