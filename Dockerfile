@@ -1,8 +1,6 @@
 FROM golang:1.24-alpine AS builder
 # Set environment variables
-ENV CGO_ENABLED=0 \
-    GOOS=linux \
-    GOARCH=amd64
+ENV CGO_ENABLED=0
 # Set working directory inside the container
 WORKDIR /build
 # Copy go.mod and go.sum files for dependency installation

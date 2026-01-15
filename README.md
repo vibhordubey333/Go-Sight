@@ -66,17 +66,6 @@ To add a dashboard:
 2. Save it to `docker/dashboards/`
 3. Restart Grafana: `make compose-down` then `make compose-up`
 
-Notes:
-- Datasource is provisioned as `prometheus` (uid `prometheus`).
-- For provisioned dashboards, remove any `__inputs` blocks.
-- Use `{job=~"$job"}` in queries if you add a `job` variable.
-
-## Troubleshooting "No data"
-
-1. Check Prometheus targets: `http://localhost:9090/targets`
-2. Verify a metric exists in Prometheus, e.g. `system_cpu_time_seconds_total`
-3. In Grafana, ensure datasource is `prometheus` and `job` is `go-api`
-
 ## Data persistence
 
 - Grafana data is stored in Postgres volume `postgres_data`
