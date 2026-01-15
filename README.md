@@ -22,7 +22,9 @@ Go-Sight is a small Go API instrumented with Prometheus metrics and visualized i
 - Go 1.22+ (for local run)
 - Docker + Docker Compose (for full stack)
 
-## Quick start (Docker Compose)
+## Ways to run
+
+### Docker Compose (recommended for local)
 
 ```bash
 make compose-up
@@ -33,11 +35,23 @@ Open:
 - Prometheus: `http://localhost:9090`
 - Grafana: `http://localhost:3000` (user: `admin`, pass: `password`)
 
-## Run locally (API only)
+### Run locally (API only)
 
 ```bash
 make run
 ```
+
+### Minikube (Kubernetes)
+
+```bash
+make k8s-build
+make k8s-apply
+```
+
+Access:
+- API: `kubectl port-forward svc/api 8000:8000`
+- Prometheus: `kubectl port-forward svc/prometheus 9090:9090`
+- Grafana: `kubectl port-forward svc/grafana 3000:3000`
 
 ## API endpoints
 
