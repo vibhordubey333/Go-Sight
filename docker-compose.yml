@@ -28,6 +28,7 @@ services:
     image: prom/prometheus:v2.55.0
     volumes:
       - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
     ports:
       - 9090:9090
     networks:
@@ -57,6 +58,8 @@ services:
     image: grafana/grafana:latest
     volumes:
       - ./docker/grafana.yml:/etc/grafana/provisioning/datasources/datasource.yaml
+      - ./docker/grafana-dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      - ./docker/dashboards:/var/lib/grafana/dashboards
     ports:
       - 3000:3000
     networks:
@@ -77,6 +80,7 @@ services:
 
 volumes:
   postgres_data:
+  prometheus_data:
 
 networks:
   go-network:

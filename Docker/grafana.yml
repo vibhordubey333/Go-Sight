@@ -3,9 +3,10 @@
 # The 'prometheus' hostname resolves within the Docker network
 apiVersion: 1
 datasources:
-  - name: Prometheus
+  - name: prometheus
     type: prometheus
     access: proxy  # Routes requests through Grafana's backend
     url: http://prometheus:9090  # Prometheus server URL
+    uid: prometheus
     isDefault: true  # Set as default data source
     editable: true  # Allow editing in Grafana UI

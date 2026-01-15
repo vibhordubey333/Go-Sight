@@ -2,11 +2,19 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/host"
+	"go.opentelemetry.io/contrib/instrumentation/runtime"
+	"go.opentelemetry.io/otel"
+	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/sdk/metric"
 )
 
 func init() {
@@ -35,18 +43,44 @@ var (
 var customRegistry = prometheus.NewRegistry()
 
 func main() {
+	if err := setupOTelMetrics(customRegistry); err != nil {
+		log.Fatalf("failed to setup otel metrics: %v", err)
+	}
+
 	router := gin.Default()
 	router.GET("/metrics", PrometheusHandler())
 
 	router.Use(RequestMetricsMiddleware())
 	router.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{"status": "ok"})
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
 	router.GET("/v1/users", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "Hello World"})
+		c.JSON(http.StatusOK, gin.H{"message": "Hello World"})
 	})
+
+	router.GET("/v1/compute", computeHandler)
 	router.Run(":8000")
+}
+
+func setupOTelMetrics(reg *prometheus.Registry) error {
+	exporter, err := otelprom.New(otelprom.WithRegisterer(reg))
+	if err != nil {
+		return err
+	}
+
+	provider := metric.NewMeterProvider(metric.WithReader(exporter))
+	otel.SetMeterProvider(provider)
+
+	if err := runtime.Start(runtime.WithMinimumReadMemStatsInterval(5 * time.Second)); err != nil {
+		return err
+	}
+
+	if err := host.Start(host.WithMeterProvider(provider)); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Custom metrics with custom regsitry
@@ -75,4 +109,24 @@ func RequestMetricsMiddleware() gin.HandlerFunc {
 		}
 
 	}
+}
+
+func computeHandler(c *gin.Context) {
+	n, err := strconv.Atoi(c.DefaultQuery("n", "10000"))
+	if err != nil || n < 1 {
+		n = 10000
+	}
+	if n > 200000 {
+		n = 200000
+	}
+
+	var sum int64
+	for i := 1; i <= n; i++ {
+		sum += int64(i * i)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"n":           n,
+		"sum_squares": sum,
+	})
 }

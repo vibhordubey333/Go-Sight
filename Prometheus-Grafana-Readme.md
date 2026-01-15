@@ -144,4 +144,25 @@ kubectl patch svc monitoring-grafana-ext -p '{"spec":{"ports":[{"port":80,"targe
 - Get minikube IP: `minikube ip`
 - Access via: `http://<minikube-ip>:<NodePort>` (check NodePort with `kubectl get svc grafana-ext monitoring-grafana-ext`)
 
+---
+
+# Grafana Dashboard Provisioning (Docker Compose)
+
+To avoid re-creating dashboards and the Prometheus data source on every restart, Grafana can auto-provision them from files.
+
+**Data source provisioning** is already configured in `docker/grafana.yml`.
+
+**Dashboard provisioning** is enabled via:
+- `docker/grafana-dashboards.yml` (provisioning config)
+- `docker/dashboards/` (JSON dashboards)
+
+Steps:
+1. In Grafana UI, export your dashboard JSON.
+2. Save it to `docker/dashboards/` (example: `docker/dashboards/go-runtime.json`).
+3. Restart Grafana:
+   - `make compose-down`
+   - `make compose-up`
+
+Grafana will auto-load any JSON files in `docker/dashboards/` on startup.
+
 
