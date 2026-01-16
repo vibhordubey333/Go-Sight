@@ -15,6 +15,7 @@ compose-clean:
 k8s-build:
 	eval $$(minikube -p minikube docker-env) && docker build -t go-api:latest .
 k8s-apply:
+	kubectl apply -f k8s/00-namespace.yaml
 	kubectl apply -f k8s
 
 k8s-delete:

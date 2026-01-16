@@ -2,6 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: grafana-provisioning
+  namespace: go-sight-backend
   labels:
     app: grafana
     grafana_provisioning: "1"
@@ -32,6 +33,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: grafana
+  namespace: go-sight-backend
 spec:
   replicas: 1
   selector:
@@ -47,6 +49,13 @@ spec:
           image: grafana/grafana:latest
           ports:
             - containerPort: 3000
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
           env:
             - name: GF_SECURITY_ADMIN_USER
               value: admin
@@ -85,6 +94,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: grafana
+  namespace: go-sight-backend
 spec:
   selector:
     app: grafana
