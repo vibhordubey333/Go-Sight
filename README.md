@@ -79,6 +79,8 @@ To add a dashboard:
 1. Export JSON in Grafana UI
 2. Save it to `docker/dashboards/`
 3. Restart Grafana: `make compose-down` then `make compose-up`
+<img width="1655" height="992" alt="image" src="https://github.com/user-attachments/assets/3d8fddee-01f0-472a-a292-4eb2e676fd3a" />
+
 
 ## Data persistence
 
