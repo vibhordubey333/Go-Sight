@@ -22,7 +22,7 @@ k8s-delete:
 	kubectl delete -f k8s
 
 k8s-status:
-	kubectl get pods,svc
+	kubectl get -n go-sight-backend pods,svc
 
 k8s-port-forward:
 	kubectl port-forward svc/api 8000:8000
