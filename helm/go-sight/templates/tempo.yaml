@@ -1,0 +1,104 @@
+{{- $ns := .Values.namespace.name -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tempo-config
+  namespace: {{ $ns }}
+data:
+  tempo.yml: |
+    server:
+      http_listen_port: {{ .Values.tempo.service.httpPort }}
+    distributor:
+      receivers:
+        otlp:
+          protocols:
+            http:
+    storage:
+      trace:
+        backend: local
+        local:
+          path: /var/tempo
+    compactor:
+      compaction:
+        block_retention: 24h
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: tempo
+  namespace: {{ $ns }}
+spec:
+  serviceName: tempo
+  replicas: {{ .Values.tempo.replicas }}
+  selector:
+    matchLabels:
+      app: tempo
+  template:
+    metadata:
+      labels:
+        app: tempo
+        {{- include "go-sight.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "go-sight.serviceAccountName" . }}
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.global.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: tempo
+          image: {{ .Values.tempo.image }}
+          {{- with .Values.global.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          args:
+            - "-config.file=/etc/tempo.yml"
+          ports:
+            - containerPort: {{ .Values.tempo.service.httpPort }}
+            - containerPort: {{ .Values.tempo.service.otlpGrpcPort }}
+            - containerPort: {{ .Values.tempo.service.otlpHttpPort }}
+          resources:
+            {{- toYaml .Values.tempo.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/tempo.yml
+              subPath: tempo.yml
+            - name: data
+              mountPath: /var/tempo
+      volumes:
+        - name: config
+          configMap:
+            name: tempo-config
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.tempo.storage.size }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tempo
+  namespace: {{ $ns }}
+  labels:
+    {{- include "go-sight.labels" . | nindent 4 }}
+spec:
+  selector:
+    app: tempo
+  ports:
+    - name: http
+      port: {{ .Values.tempo.service.httpPort }}
+      targetPort: {{ .Values.tempo.service.httpPort }}
+    - name: otlp-grpc
+      port: {{ .Values.tempo.service.otlpGrpcPort }}
+      targetPort: {{ .Values.tempo.service.otlpGrpcPort }}
+    - name: otlp-http
+      port: {{ .Values.tempo.service.otlpHttpPort }}
+      targetPort: {{ .Values.tempo.service.otlpHttpPort }}

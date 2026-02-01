@@ -56,6 +56,15 @@ Access:
 - Prometheus: `kubectl port-forward svc/prometheus 9090:9090`
 - Grafana: `kubectl port-forward svc/grafana 3000:3000`
 
+### Helm
+
+If the namespace already exists, set `namespace.create=false` (default).
+
+```bash
+kubectl create namespace go-sight-backend
+helm install go-sight ./helm/go-sight --namespace go-sight-backend
+```
+
 ## API endpoints
 
 - `GET /health` -> service health

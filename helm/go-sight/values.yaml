@@ -1,0 +1,110 @@
+# yaml-language-server: $schema=./values.schema.json
+namespace:
+  create: false
+  name: go-sight-backend
+
+global:
+  imagePullSecrets: []
+  podSecurityContext: {}
+  containerSecurityContext: {}
+
+serviceAccount:
+  create: true
+  name: ""
+
+api:
+  replicas: 1
+  image:
+    repository: go-api
+    tag: latest
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "256Mi"
+  service:
+    port: 8000
+    type: ClusterIP
+  otelExporterEndpoint: http://otel-collector:4318
+
+prometheus:
+  replicas: 1
+  image: prom/prometheus:v2.55.0
+  storage:
+    size: 1Gi
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  service:
+    port: 9090
+    type: ClusterIP
+
+postgres:
+  replicas: 1
+  image: postgres:15-alpine
+  storage:
+    size: 1Gi
+  credentials:
+    user: grafana
+    password: grafana
+    database: grafana
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  existingSecret: ""
+
+grafana:
+  replicas: 1
+  image: grafana/grafana:latest
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  adminUser: admin
+  adminPassword: password
+  existingSecret: ""
+  service:
+    port: 3000
+    type: ClusterIP
+
+otelCollector:
+  replicas: 1
+  image: otel/opentelemetry-collector:0.123.0
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "128Mi"
+    limits:
+      cpu: "250m"
+      memory: "256Mi"
+
+tempo:
+  replicas: 1
+  image: grafana/tempo:2.7.2
+  storage:
+    size: 1Gi
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  service:
+    httpPort: 3200
+    otlpGrpcPort: 4317
+    otlpHttpPort: 4318
