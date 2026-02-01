@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -10,11 +11,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/contrib/instrumentation/host"
 	"go.opentelemetry.io/contrib/instrumentation/runtime"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	otelprom "go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.27.0"
 )
 
 func init() {
@@ -46,8 +52,20 @@ func main() {
 	if err := setupOTelMetrics(customRegistry); err != nil {
 		log.Fatalf("failed to setup otel metrics: %v", err)
 	}
+	traceShutdown, err := setupOTelTracing()
+	if err != nil {
+		log.Fatalf("failed to setup otel tracing: %v", err)
+	}
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := traceShutdown(ctx); err != nil {
+			log.Printf("failed to shutdown otel tracing: %v", err)
+		}
+	}()
 
 	router := gin.Default()
+	router.Use(otelgin.Middleware("go-sight-api"))
 	router.GET("/metrics", PrometheusHandler())
 
 	router.Use(RequestMetricsMiddleware())
@@ -61,6 +79,32 @@ func main() {
 
 	router.GET("/v1/compute", computeHandler)
 	router.Run(":8000")
+}
+
+func setupOTelTracing() (func(context.Context) error, error) {
+	ctx := context.Background()
+
+	exporter, err := otlptracehttp.New(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := resource.New(ctx,
+		resource.WithAttributes(
+			semconv.ServiceName("go-sight-api"),
+		),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	provider := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(res),
+	)
+	otel.SetTracerProvider(provider)
+
+	return provider.Shutdown, nil
 }
 
 func setupOTelMetrics(reg *prometheus.Registry) error {

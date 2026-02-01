@@ -10,3 +10,9 @@ datasources:
     uid: prometheus
     isDefault: true  # Set as default data source
     editable: true  # Allow editing in Grafana UI
+  - name: tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    uid: tempo
+    editable: true

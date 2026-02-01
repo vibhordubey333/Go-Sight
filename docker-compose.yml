@@ -9,6 +9,8 @@ services:
     image: go-api:latest
     ports:
       - 8000:8000
+    environment:
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318
     networks:
       - go-network
     healthcheck:
@@ -76,10 +78,39 @@ services:
     depends_on:
       - prometheus
       - postgres
+      - tempo
+    restart: unless-stopped
+
+  otel-collector:
+    container_name: otel-collector
+    image: otel/opentelemetry-collector:0.123.0
+    command: ["--config=/etc/otel-collector.yml"]
+    volumes:
+      - ./docker/otel-collector.yml:/etc/otel-collector.yml
+    ports:
+      - 4318:4318
+    networks:
+      - go-network
+    restart: unless-stopped
+
+  tempo:
+    container_name: tempo
+    image: grafana/tempo:2.7.2
+    command: ["-config.file=/etc/tempo.yml"]
+    volumes:
+      - ./docker/tempo.yml:/etc/tempo.yml
+      - tempo_data:/var/tempo
+    ports:
+      - 3200:3200
+      - 4317:4317
+      - 4318:4318
+    networks:
+      - go-network
     restart: unless-stopped
 
 volumes:
   postgres_data:
+  tempo_data:
   prometheus_data:
 
 networks:

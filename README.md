@@ -6,6 +6,7 @@ Go-Sight is a small Go API instrumented with Prometheus metrics and visualized i
 
 - Exposes basic API routes for health checks and sample responses
 - Exposes `/metrics` with OpenTelemetry runtime and host metrics
+- Exposes OpenTelemetry traces and exports to Grafana Tempo
 - Scrapes metrics with Prometheus and visualizes them in Grafana
 
 ## What is included
@@ -14,6 +15,7 @@ Go-Sight is a small Go API instrumented with Prometheus metrics and visualized i
 - Prometheus scraping the API metrics
 - OpenTelemetry runtime + host metrics exposed at `/metrics`
 - Grafana with provisioned Prometheus data source
+- Grafana with provisioned Tempo data source
 - Dashboard auto-provisioning from JSON files
 - Local persistence for Grafana and Prometheus
 
@@ -34,6 +36,7 @@ Open:
 - API: `http://localhost:8000/health`
 - Prometheus: `http://localhost:9090`
 - Grafana: `http://localhost:3000` (user: `admin`, pass: `password`)
+- Tempo: `http://localhost:3200`
 
 ### Run locally (API only)
 
@@ -68,6 +71,13 @@ curl http://localhost:8000/v1/users
 curl "http://localhost:8000/v1/compute?n=10000"
 curl http://localhost:8000/metrics | head -n 20
 ```
+
+## Tracing (OpenTelemetry)
+
+The API exports traces over OTLP/HTTP to the OpenTelemetry Collector, which forwards them to Tempo.
+Defaults are configured in Docker Compose; for custom setups, set:
+
+- `OTEL_EXPORTER_OTLP_ENDPOINT` (example: `http://otel-collector:4318`)
 
 ## Grafana dashboards
 
